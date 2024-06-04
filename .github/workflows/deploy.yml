@@ -1,0 +1,47 @@
+name: Deployment Workflow
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  APP_NAME: greatape-pb
+
+jobs:
+
+  build:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22'
+
+    - name: Build
+      run: go build -v -o ./bin/${{ env.APP_NAME }} .
+
+    - name: Test
+      run: go test -v ./...
+
+    - name: Prepare to Deploy
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SERVER_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.SERVER_IP }} > ~/.ssh/known_hosts
+
+    - name: Stop the Service
+      run: ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "sudo systemctl stop ${{ env.APP_NAME }}"
+
+    - name: Deploy
+      run: scp ./bin/${{ env.APP_NAME }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:~/${{ env.APP_NAME }}
+        
+    - name: Start the Service
+      run: ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "sudo systemctl start ${{ env.APP_NAME }}"
+
+    
