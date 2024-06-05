@@ -24,6 +24,14 @@ go.work.sum
 # env file
 .env
 
+.vscode/*
+
+# Local History for Visual Studio Code
+.history/
+
+# Built Visual Studio Code Extensions
+*.vsix
+
 # Pocketbase data
 pb_data/
 pb_migrations/
